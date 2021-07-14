@@ -1,39 +1,82 @@
 package com.fr.fiftyfive.exercise.dateparser;
-
-
+/*Hawking is a natural language date parser written in Java for more info go to https://github.com/zoho/hawking
+*  This Code was written on the demand of 55
+*	author: IHSANE Mohamed Amine
+*/
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.zoho.hawking.HawkingTimeParser;
 import com.zoho.hawking.datetimeparser.configuration.HawkingConfiguration;
 import com.zoho.hawking.language.english.model.DatesFound;
 
 
+
+
+
+
 class DateParser {
 	
 	
-	private static HashMap<DateTime,Integer> extractedDates = new HashMap<>();
+	private static Map<DateTime,Integer> extractedDates = new HashMap<>();
 	
 
 	
-
-  public static HashMap<DateTime,Integer> getDates(DatesFound datesFound) {
+	/* @Method : getDates function extract the dates parsed using the HAwking API to a Map
+	 * @param : datesFound the dates found using the  HawkingTimeParser.parse Method
+	 * @return : sortedMap sorted Map of dates as keys and Years as values
+	 * 
+	 * */
+  public static Map<DateTime,Integer> getDates(DatesFound datesFound) {
 	  
 	  datesFound.getParserOutputs().forEach(v -> extractedDates.put(v.getDateRange().getEnd(),v.getDateRange().getEnd().getYear()));
-	    
-	return extractedDates;
+	   Map<DateTime, Integer> sortedMap = extractedDates.entrySet().stream()
+			   .sorted(Map.Entry.comparingByKey())
+			   .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,
+					   (oldValue,newValue)-> oldValue, LinkedHashMap::new));
+	   sortedMap.entrySet()
+	      .stream()
+	      .collect(Collectors.groupingBy(
+	              Map.Entry::getValue,
+	              HashMap::new,
+	              Collectors.mapping(Map.Entry::getKey, Collectors.toList())));;
+	return sortedMap;
 	  
   }
   
+  /* @Method : getDates function extract the dates parsed using the HAwking API to a Map
+	 * @param : sorted Map of dates as keys and Years as values
+	 * @return : reverseMap with Years as keys and an arrayList as Values 
+	 * 
+	 * */
   
+  public static Map<Integer, ArrayList<DateTime>> getReverseMap(Map<DateTime,Integer> map){
+	  
+	  Map<Integer, ArrayList<DateTime>> reverseMap = new HashMap<>(
+			    map.entrySet().stream()
+			        .collect(Collectors.groupingBy(Map.Entry::getValue)).values().stream()
+			        .collect(Collectors.toMap(
+			                item -> item.get(0).getValue(),
+			                item -> new ArrayList<DateTime>(
+			                    item.stream()
+			                        .map(Map.Entry::getKey)
+			                        .collect(Collectors.toList())
+			                ))
+			        ));
+	 
+	return reverseMap;
+
+
+	  
+  }
   
-  
-  
+   
 
   public static void main(String[] args) throws Exception {
     HawkingTimeParser parser = new HawkingTimeParser();
@@ -59,17 +102,21 @@ class DateParser {
     hawkingConfiguration.setFiscalYearEnd(1);
     hawkingConfiguration.setTimeZone("IST");
     Date referenceDate = new Date();
-    DatesFound datesFound = null;
+    com.zoho.hawking.language.english.model.DatesFound datesFound = null;
 //    try {
 //      datesFound = parser.parse(inputText, referenceDate, hawkingConfiguration, "eng"); //No I18N
 //    } catch (Exception e) {
 //      // TODO Auto-generated catch block
 //      e.printStackTrace();
 //    }
-//    assert datesFound != null;
-//    LOGGER.info("DATES FOUND ::  "+ datesFound.toString());
+    //assert datesFound != null;
     datesFound = parser.parse(inputText, referenceDate, hawkingConfiguration, "eng");
-    DateParser.getDates(datesFound).forEach((k,v) -> System.out.println(v));
+    Map<Integer, ArrayList<DateTime>> resultMap = DateParser.getReverseMap(DateParser.getDates(datesFound));
+    for (Map.Entry<Integer, ArrayList<DateTime>> entry : resultMap.entrySet()) {
+        System.out.print(entry.getKey());
+        System.out.println(':');
+        entry.getValue().forEach(v -> System.out.println("\t-"+v.getMonthOfYear()+"\n\t\t-"+v.getDayOfMonth()+'('+(entry.getValue().indexOf(v)+1)+')'));
+    }
   }
 
 
