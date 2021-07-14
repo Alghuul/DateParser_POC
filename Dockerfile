@@ -9,4 +9,4 @@ CMD ["java", "-jar", "/demo.jar"]
 EXPOSE 80
 # instructions to execute build and run docker image of Jar file
 # docker build -t dateparser:1.0-SNAPSHOT .
-# docker run -d -p 80:80 dateparser:1.0-SNAPSHOT
+# docker run -p 80:80 dateparser:1.0-SNAPSHOT
